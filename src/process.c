@@ -201,8 +201,10 @@ int open_process(pid_t pid, process_t *process)
 		goto L_STATUS_RET;
 	}
 
-	/* Free and Return on Error */
-	if (NULL) {
+	goto L_SUCCESS;
+
+	/* Error labels */
+	{
 	L_STATUS_RET:
 		free(process->cmdline);
 	L_CMDLINE_RET:
@@ -211,6 +213,7 @@ int open_process(pid_t pid, process_t *process)
 		return ret;
 	}
 
+L_SUCCESS:
 	ret = !ret;
 	return ret;
 }

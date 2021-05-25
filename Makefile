@@ -18,11 +18,11 @@ install: all
 	@echo "[+] Done"
 
 all: clean
+	mkdir $(OUTPUT_DIR)
 	@echo "[-] Compiling..."
 	$(CC) -o $(OUTPUT) $(CFLAGS) $(SRCS) $(LIBS)
 	@echo "[+] Done"
 clean:
-	@echo "[-] Clearing"
+	@echo "[-] Cleaning"
 	if [ -d $(OUTPUT_DIR) ]; then rm -rf $(OUTPUT_DIR); fi
-	mkdir $(OUTPUT_DIR)
 	@echo "[+] Done"
