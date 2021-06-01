@@ -248,5 +248,76 @@ static int read_cmdline(struct proc_t *proc)
 
 static int read_status(struct proc_t *proc)
 {
+	int ret = 0;
+	char *status = (char *)NULL;
+	char *ptr;
 
+	{
+		int  ret = 0;
+		int  fd;
+		char buf[64] = { 0 };
+		ssize_t size;
+		ssize_t total = 0;
+
+		snprintf(buf, sizeof(buf), "/proc/%d/status", proc->id);
+
+		fd = open(buf, O_RDONLY);
+		if (fd == -1)
+			return ret;
+
+		while ((size = read(fd, (void *)buf, sizeof(buf)))) {
+			char *old_status = status;
+			size /= sizeof(char);
+			status = calloc(total + size + 1, sizeof(char));
+
+			if (total) {
+				if (status)
+					strncpy(status, old_status, total);
+				free(old_status);
+			}
+
+			strncpy(&status[total], buf, size);
+
+			total += size;
+		}
+		
+		if (total)
+			status[total] = '\x00';
+
+		close(fd);
+	}
+
+	if (!status)
+		return ret;
+
+	ptr = strstr(status, "State:");
+	ptr = strchr(ptr, '\t');
+	ptr = &ptr[1];
+	proc->state = *ptr;
+
+	ptr = strstr(ptr, "PPid:");
+	ptr = strchr(ptr, '\t');
+	ptr = &ptr[1];
+	proc->parent = (pid_t)atoi(ptr);
+
+	ptr = strstr(ptr, "TracerPid:");
+	ptr = strchr(ptr, '\t');
+	ptr = &ptr[1];
+	proc->tracer = (pid_t)atoi(ptr);
+
+	ptr = strstr(ptr, "Uid:");
+	ptr = strchr(ptr, '\t');
+	ptr = &ptr[1];
+	proc->owner = (uid_t)atoi(ptr);
+
+	ptr = strstr(ptr, "Threads:");
+	ptr = strchr(ptr, '\t');
+	ptr = &ptr[1];
+	proc->threads = (int)atoi(ptr);
+
+	ret = !ret;
+
+	free(status);
+
+	return ret;
 }
