@@ -1,5 +1,15 @@
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include "proc.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <dirent.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <string.h>
 
 #define SAFE_FREE(ptr) if (ptr) free(ptr)
 
@@ -104,22 +114,136 @@ int enum_procs(int(*callback)(struct proc_t *proc, void *arg),
 
 static int read_exe(struct proc_t *proc)
 {
+	int     ret = 0;
+	char   *buf;
+	ssize_t len;
+	char    exe_path[64] = { 0 };
 
+	buf = calloc(PATH_MAX + 1, sizeof(char));
+	if (!buf)
+		return ret;
+
+	snprintf(exe_path, sizeof(exe_path), "/proc/%d/exe", proc->id);
+
+	len = readlink(exe_path, buf, PATH_MAX);
+
+	if (len != -1) {
+		proc->path = calloc(len + 1, sizeof(char));
+		if (proc->path) {
+			strncpy(proc->path, buf, len);
+			proc->path[len] = '\x00';
+			ret = !ret;
+		}
+	}
+
+	free(buf);
+	return ret;
 }
 
 static int read_cwd(struct proc_t *proc)
 {
+	int     ret = 0;
+	char   *buf;
+	ssize_t len;
+	char    cwd_path[64] = { 0 };
 
+	buf = calloc(PATH_MAX + 1, sizeof(char));
+	if (!buf)
+		return ret;
+
+	snprintf(cwd_path, sizeof(cwd_path), "/proc/%d/cwd", proc->id);
+
+	len = readlink(cwd_path, buf, PATH_MAX);
+
+	if (len != -1) {
+		proc->cwd = calloc(len + 1, sizeof(char));
+		if (proc->cwd) {
+			strncpy(proc->cwd, buf, len);
+			proc->cwd[len] = '\x00';
+			ret = !ret;
+		}
+	}
+
+	free(buf);
+
+	return ret;
 }
 
 static int read_comm(struct proc_t *proc)
 {
+	int  ret = 0;
+	int  fd;
+	char buf[64] = { 0 };
+	ssize_t size;
+	ssize_t total = 0;
 
+	snprintf(buf, sizeof(buf), "/proc/%d/comm", proc->id);
+
+	fd = open(buf, O_RDONLY);
+	if (fd == -1)
+		return ret;
+
+	while ((size = read(fd, (void *)buf, sizeof(buf)))) {
+		char *old_name = proc->name;
+		size /= sizeof(char);
+		proc->name = calloc(total + size, sizeof(char));
+
+		if (total) {
+			if (proc->name)
+				strncpy(proc->name, old_name, total);
+			free(old_name);
+		}
+
+		strncpy(&proc->name[total], buf, size);
+		total += size;
+	}
+	
+	if (total) {
+		proc->name[total - 1] = '\x00'; /* Replace '\n' with '\x00' */
+		ret = !ret;
+	}
+
+	close(fd);
+	return ret;
 }
 
 static int read_cmdline(struct proc_t *proc)
 {
+	int  ret = 0;
+	int  fd;
+	char buf[64] = { 0 };
+	ssize_t size;
+	ssize_t total = 0;
 
+	snprintf(buf, sizeof(buf), "/proc/%d/cmdline", proc->id);
+
+	fd = open(buf, O_RDONLY);
+	if (fd == -1)
+		return ret;
+
+	while ((size = read(fd, (void *)buf, sizeof(buf)))) {
+		char *old_cmdline = proc->cmdline;
+		size /= sizeof(char);
+		proc->cmdline = calloc(total + size + 1, sizeof(char));
+
+		if (total) {
+			if (proc->cmdline)
+				strncpy(proc->cmdline, old_cmdline, total);
+			free(old_cmdline);
+		}
+
+		strncpy(&proc->cmdline[total], buf, size);
+
+		total += size;
+	}
+	
+	if (total) {
+		proc->cmdline[total] = '\x00';
+		ret = !ret;
+	}
+
+	close(fd);
+	return ret;
 }
 
 static int read_status(struct proc_t *proc)

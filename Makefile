@@ -1,7 +1,7 @@
 OUTPUT_DIR=./bin
 OUTPUT=$(OUTPUT_DIR)/tux-inject
 SRC_DIR=./src
-SRCS=src/main.c $(SRC_DIR)/process.c
+SRCS=$(SRC_DIR)/main.c $(SRC_DIR)/proc/proc.c $(SRC_DIR)/ptrace/ptrace.c
 LIBS=-ldl
 CFLAGS=-std=c89 -g -Wall -Wextra -pedantic
 

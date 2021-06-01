@@ -2,6 +2,7 @@
 #define PTRACE_H
 
 #include <sys/types.h>
+#include <sys/user.h>
 #include <sys/ptrace.h>
 
 long ptrace_attach(pid_t pid);
