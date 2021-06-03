@@ -25,7 +25,7 @@ enum {
 	PROC_COMM_ERR,     /* Failed to parse '/proc/<pid>/comm' */
 	PROC_CMDLINE_ERR,  /* Failed to parse '/proc/<pid>/cmdline' */
 	PROC_STATUS_ERR,   /* Failed to parse '/proc/<pid>/status' */
-	PROC_DIR_ERR,      /* Unable to open directory '/proc' */
+	PROC_DIR_ERR       /* Unable to open directory '/proc' */
 };
 
 int open_proc(pid_t pid, struct proc_t *proc);

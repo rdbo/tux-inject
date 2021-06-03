@@ -253,7 +253,6 @@ static int read_status(struct proc_t *proc)
 	char *ptr;
 
 	{
-		int  ret = 0;
 		int  fd;
 		char buf[64] = { 0 };
 		ssize_t size;
